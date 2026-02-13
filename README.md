@@ -1,5 +1,3 @@
----
-
 # 🧥 GenerativeAI-ClassProject
 
 ## AI-Powered 3D Apparel Branding Studio
