@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas import BrandingRequest, BrandingResponse
+from app.schemas import BrandingImageRequest, BrandingImageResponse, BrandingRequest, BrandingResponse
 from app.services import BrandingService, get_branding_service
 
 router = APIRouter(prefix="/api")
@@ -18,3 +18,10 @@ async def generate_branding(
 ) -> BrandingResponse:
     return service.generate(payload)
 
+
+@router.post("/branding/generate-image", response_model=BrandingImageResponse, tags=["branding"])
+async def generate_brand_image(
+    payload: BrandingImageRequest,
+    service: BrandingService = Depends(get_branding_service),
+) -> BrandingImageResponse:
+    return BrandingImageResponse(imageDataUrl=service.generate_image(payload.prompt))

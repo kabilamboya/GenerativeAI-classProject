@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo, useState } from "react";
 import IdeaForm from "./components/IdeaForm";
 import BrandingDetails from "./components/BrandingDetails";
-import { generateBranding } from "./lib/api";
+import { generateBrandImage, generateBranding } from "./lib/api";
 
 const ShirtCanvas = lazy(() => import("./components/ShirtCanvas"));
 
@@ -35,7 +35,13 @@ export default function App() {
   const [mockupType, setMockupType] = useState("T-Shirt");
   const [branding, setBranding] = useState(emptyBranding);
   const [logoImage, setLogoImage] = useState("");
+  const [tshirtFrontImage, setTshirtFrontImage] = useState("");
+  const [tshirtBackImage, setTshirtBackImage] = useState("");
+  const [mugSideImage, setMugSideImage] = useState("");
+  const [imagePrompt, setImagePrompt] = useState("");
+  const [generatingImage, setGeneratingImage] = useState(false);
   const [itemColor, setItemColor] = useState("#f2f4f8");
+  const [houseBrandView, setHouseBrandView] = useState("outside");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const modeInfo = MODE_CONFIG[userMode];
@@ -48,14 +54,21 @@ export default function App() {
     [branding]
   );
 
+  const defaultIdeaByMode = {
+    "non-tech": "Consumer lifestyle brand for everyday products",
+    tech: "Developer productivity platform for software teams",
+    pro: "",
+  };
+
   const handleGenerate = async () => {
-    if (!idea.trim()) return;
+    const resolvedIdea = userMode === "pro" ? idea.trim() : defaultIdeaByMode[userMode];
+    if (!resolvedIdea) return;
 
     setLoading(true);
     setError("");
 
     try {
-      const data = await generateBranding({ idea, direction });
+      const data = await generateBranding({ idea: resolvedIdea, direction });
       setBranding({
         name: data.name || "",
         slogan: data.slogan || "",
@@ -87,6 +100,68 @@ export default function App() {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleTshirtImageUpload = (event, side) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      setError("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        if (side === "front") setTshirtFrontImage(reader.result);
+        if (side === "back") setTshirtBackImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleMugSideUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) {
+      setError("Please upload a valid image file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setMugSideImage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGeneratePromptImage = async () => {
+    const prompt = imagePrompt.trim() || `Logo for ${idea.trim()}`;
+    if (!prompt.trim()) {
+      setError("Provide a prompt or business idea to generate an image.");
+      return;
+    }
+
+      setGeneratingImage(true);
+    setError("");
+    try {
+      const data = await generateBrandImage({ prompt });
+      setLogoImage(data.imageDataUrl || "");
+      if (mockupType === "T-Shirt") {
+        setTshirtFrontImage(data.imageDataUrl || "");
+        setTshirtBackImage(data.imageDataUrl || "");
+      }
+    } catch (err) {
+      setError(err.message || "Unable to generate image.");
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   return (
@@ -121,8 +196,6 @@ export default function App() {
           setIdea={setIdea}
           direction={direction}
           setDirection={setDirection}
-          mockupType={mockupType}
-          setMockupType={setMockupType}
           onGenerate={handleGenerate}
           loading={loading}
         />
@@ -132,11 +205,11 @@ export default function App() {
             userMode={userMode}
             branding={branding}
             setBranding={setBranding}
-            logoImage={logoImage}
-            onLogoUpload={handleLogoUpload}
-            clearLogo={() => setLogoImage("")}
-            itemColor={itemColor}
-            setItemColor={setItemColor}
+            idea={idea}
+            imagePrompt={imagePrompt}
+            setImagePrompt={setImagePrompt}
+            onGeneratePromptImage={handleGeneratePromptImage}
+            generatingImage={generatingImage}
           />
         ) : (
           <section className="panel placeholder">
@@ -155,8 +228,26 @@ export default function App() {
           userMode={userMode}
           branding={branding}
           mockupType={mockupType}
+          onMockupTypeChange={setMockupType}
+          onPlacementChange={(placement) =>
+            setBranding((previous) => ({ ...previous, placement }))
+          }
           logoImage={logoImage}
+          onLogoUpload={handleLogoUpload}
+          onClearLogo={() => setLogoImage("")}
+          tshirtFrontImage={tshirtFrontImage}
+          tshirtBackImage={tshirtBackImage}
+          onTshirtFrontUpload={(event) => handleTshirtImageUpload(event, "front")}
+          onTshirtBackUpload={(event) => handleTshirtImageUpload(event, "back")}
+          onClearTshirtFront={() => setTshirtFrontImage("")}
+          onClearTshirtBack={() => setTshirtBackImage("")}
+          mugSideImage={mugSideImage}
+          onMugSideUpload={handleMugSideUpload}
+          onClearMugSide={() => setMugSideImage("")}
           itemColor={itemColor}
+          onItemColorChange={setItemColor}
+          houseBrandView={houseBrandView}
+          onHouseBrandViewChange={setHouseBrandView}
         />
       </Suspense>
     </main>

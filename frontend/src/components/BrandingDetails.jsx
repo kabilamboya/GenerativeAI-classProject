@@ -1,8 +1,5 @@
 import { useMemo } from "react";
 
-const placements = ["Front", "Back", "Left Sleeve", "Right Sleeve"];
-const colorPalette = ["#f2f4f8", "#0f172a", "#1f6f8b", "#8b5e3c", "#7f1d1d", "#14532d"];
-
 function wordCount(value) {
   return value.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -11,11 +8,11 @@ export default function BrandingDetails({
   userMode,
   branding,
   setBranding,
-  logoImage,
-  onLogoUpload,
-  clearLogo,
-  itemColor,
-  setItemColor,
+  idea,
+  imagePrompt,
+  setImagePrompt,
+  onGeneratePromptImage,
+  generatingImage,
 }) {
   const handleChange = (field, value) => {
     setBranding((previous) => ({ ...previous, [field]: value }));
@@ -73,43 +70,37 @@ export default function BrandingDetails({
         </div>
       )}
 
-      <label htmlFor="placement">Placement</label>
-      <select
-        id="placement"
-        className="field"
-        value={branding.placement}
-        onChange={(event) => handleChange("placement", event.target.value)}
-      >
-        {placements.map((placement) => (
-          <option key={placement} value={placement}>
-            {placement}
-          </option>
-        ))}
-      </select>
-
-      <label htmlFor="logoUpload">Upload brand image</label>
-      <input id="logoUpload" className="field" type="file" accept="image/*" onChange={onLogoUpload} />
-      <p className="hint">Image is placed on side faces only: front, back, left, right.</p>
-      {logoImage ? (
-        <button type="button" className="btn secondaryBtn" onClick={clearLogo}>
-          Remove image
-        </button>
-      ) : null}
-
-      <label>Color palette</label>
-      <div className="paletteRow">
-        {colorPalette.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className={`swatch ${itemColor === color ? "active" : ""}`}
-            style={{ backgroundColor: color }}
-            title={color}
-            aria-label={`Choose ${color}`}
-            onClick={() => setItemColor(color)}
-          />
-        ))}
+      <div className="readOnlyPanel">
+        <p className="hint strong">3D Quick Edit</p>
+        <p className="hint">
+          Use the 3D Mockup Preview side panel to switch objects, placement, uploads, and colors.
+        </p>
       </div>
+
+      {userMode === "pro" ? (
+        <>
+          <label htmlFor="ideaContext">Business idea context</label>
+          <textarea id="ideaContext" className="field" rows={2} value={idea} readOnly />
+
+          <label htmlFor="imagePrompt">Image prompt (Pro)</label>
+          <textarea
+            id="imagePrompt"
+            className="field"
+            rows={3}
+            value={imagePrompt}
+            onChange={(event) => setImagePrompt(event.target.value)}
+            placeholder="Example: Minimal geometric logo mark, navy and white, no text"
+          />
+          <button
+            type="button"
+            className="btn"
+            onClick={onGeneratePromptImage}
+            disabled={generatingImage || (!imagePrompt.trim() && !idea.trim())}
+          >
+            {generatingImage ? "Generating Image..." : "Generate Image from Prompt"}
+          </button>
+        </>
+      ) : null}
 
       {userMode === "pro" ? (
         <div className="checklist">

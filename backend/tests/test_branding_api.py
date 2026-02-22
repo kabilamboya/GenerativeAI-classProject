@@ -16,6 +16,9 @@ class StubBrandingService:
             placement="Front",
         )
 
+    def generate_image(self, prompt: str) -> str:
+        return f"data:image/svg+xml;utf8,{prompt}"
+
 
 class _FakeResponse:
     output_text = (
@@ -60,6 +63,19 @@ def test_generate_endpoint_invalid_request() -> None:
     assert response.status_code == 422
 
 
+def test_generate_image_endpoint() -> None:
+    from app.api.routes.branding import get_branding_service
+
+    app.dependency_overrides[get_branding_service] = lambda: StubBrandingService()
+    client = TestClient(app)
+
+    response = client.post("/api/branding/generate-image", json={"prompt": "Minimal hex logo"})
+    assert response.status_code == 200
+    assert response.json()["imageDataUrl"].startswith("data:image/")
+
+    app.dependency_overrides.clear()
+
+
 def test_service_normalizes_invalid_placement() -> None:
     service = BrandingService(
         settings=Settings(openai_api_key="test-key"),
@@ -67,4 +83,3 @@ def test_service_normalizes_invalid_placement() -> None:
     )
     result = service.generate(BrandingRequest(idea="AI tutoring", direction="Bold"))
     assert result.placement == "Front"
-

@@ -26,3 +26,18 @@ class BrandingResponse(BaseModel):
     missionStatement: str
     placement: Placement
 
+
+class BrandingImageRequest(BaseModel):
+    prompt: str = Field(min_length=3, max_length=500)
+
+    @field_validator("prompt")
+    @classmethod
+    def normalize_prompt(cls, value: str) -> str:
+        cleaned = value.strip()
+        if len(cleaned) < 3:
+            raise ValueError("Prompt must be at least 3 characters long.")
+        return cleaned
+
+
+class BrandingImageResponse(BaseModel):
+    imageDataUrl: str

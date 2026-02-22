@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4.1-mini"
+    openai_image_model: str = "gpt-image-1"
     cors_origins: str = "http://localhost:5173"
     api_title: str = "AI-Powered 3D Apparel Branding Studio API"
     api_version: str = "0.2.0"
@@ -23,4 +24,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

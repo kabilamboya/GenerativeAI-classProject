@@ -235,8 +235,102 @@ textarea.field {
   border: 1px solid #d0dae7;
 }
 
+.previewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 0.55rem;
+  background: linear-gradient(145deg, #edf3fb 0%, #f3f8fe 100%);
+}
+
+.canvasViewport {
+  border: 1px solid #d0dae7;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 100%;
+}
+
+.previewSidePanel {
+  margin: 0;
+  padding: 0.8rem;
+  overflow: auto;
+}
+
+.previewSidePanel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.objectSwitch {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.42rem;
+}
+
+.miniBtn {
+  border: 1px solid #b4c6da;
+  background: #f7fbff;
+  color: #1f3448;
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.miniBtn.active {
+  background: #1d4e85;
+  border-color: #1d4e85;
+  color: #f5fbff;
+}
+
+.secondaryMini {
+  margin-top: 0.4rem;
+  background: #f2f6fb;
+}
+
+.shirtSheet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  align-items: start;
+  justify-items: center;
+  background: #ececec;
+  border: 1px solid #d7d7d7;
+  border-radius: 12px;
+  padding: 1rem 0.6rem;
+}
+
+.shirtView {
+  width: 100%;
+  max-width: 280px;
+  text-align: center;
+}
+
+.shirtSvg {
+  width: 100%;
+  height: auto;
+}
+
+.sheetLabel {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: #27394e;
+  font-weight: 700;
+}
+
 @media (max-width: 900px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shirtSheet {
+    grid-template-columns: 1fr;
+  }
+
+  .previewLayout {
     grid-template-columns: 1fr;
   }
 

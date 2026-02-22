@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+import urllib.parse
 from functools import lru_cache
 from json import JSONDecodeError
 from typing import Any, Callable
@@ -50,6 +51,35 @@ class BrandingService:
             LOGGER.exception("Brand generation failed. Falling back to local generation.")
 
         return self._local_fallback(request)
+
+    def generate_image(self, prompt: str) -> str:
+        if not self.settings.openai_api_key or OpenAI is None:
+            LOGGER.info("Using local image fallback because OpenAI client/key is unavailable.")
+            return self._local_image_fallback(prompt)
+
+        try:
+            client = self.client_factory(self.settings.openai_api_key)
+            result = client.images.generate(
+                model=self.settings.openai_image_model,
+                prompt=(
+                    "Create a clean branding logo on transparent background. "
+                    "No text unless user explicitly asks for text. "
+                    f"Brand prompt: {prompt}"
+                ),
+                size="1024x1024",
+            )
+            data = getattr(result, "data", None) or []
+            if not data:
+                raise ValueError("Image generation returned no data.")
+
+            b64 = getattr(data[0], "b64_json", None)
+            if not b64:
+                raise ValueError("Image generation response missing b64_json.")
+
+            return f"data:image/png;base64,{b64}"
+        except Exception:
+            LOGGER.exception("Image generation failed. Falling back to local placeholder image.")
+            return self._local_image_fallback(prompt)
 
     @staticmethod
     def _default_client_factory(api_key: str) -> Any:
@@ -130,6 +160,28 @@ class BrandingService:
             raise ValueError("OpenAI payload is missing required fields.")
 
         return normalized
+
+    @staticmethod
+    def _local_image_fallback(prompt: str) -> str:
+        safe_prompt = prompt.strip()[:64] or "Brand Logo"
+        svg = f"""
+<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='1024' viewBox='0 0 1024 1024'>
+  <defs>
+    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#e8f3ff'/>
+      <stop offset='100%' stop-color='#f8fff4'/>
+    </linearGradient>
+  </defs>
+  <rect width='1024' height='1024' fill='url(#g)'/>
+  <circle cx='512' cy='460' r='230' fill='#1f6f8b' opacity='0.16'/>
+  <rect x='322' y='272' width='380' height='380' rx='58' fill='#1f6f8b' opacity='0.25'/>
+  <text x='512' y='760' text-anchor='middle' font-family='Segoe UI, Arial, sans-serif' font-size='46' fill='#173046'>
+    {safe_prompt}
+  </text>
+</svg>
+""".strip()
+        encoded = urllib.parse.quote(svg)
+        return f"data:image/svg+xml;utf8,{encoded}"
 
 
 @lru_cache

@@ -8,14 +8,14 @@ const directionLabels = {
 const modeCopy = {
   "non-tech": {
     title: "Quick Brand Brief",
-    subtitle: "Share your business idea and we will generate a ready-to-edit brand concept.",
-    placeholder: "Example: App that helps busy families plan healthy meals in minutes",
+    subtitle: "Choose a style and generate a ready-to-edit brand concept.",
+    placeholder: "",
     showChecklist: false,
   },
   tech: {
     title: "Creative Prompt",
-    subtitle: "Describe business value, users, and preferred style direction.",
-    placeholder: "Example: Developer workflow tool for secure AI code reviews in large teams",
+    subtitle: "Use advanced controls and generate branding quickly.",
+    placeholder: "",
     showChecklist: true,
   },
   pro: {
@@ -33,8 +33,6 @@ export default function IdeaForm({
   setIdea,
   direction,
   setDirection,
-  mockupType,
-  setMockupType,
   onGenerate,
   loading,
 }) {
@@ -46,16 +44,22 @@ export default function IdeaForm({
       <h2>{copy.title}</h2>
       <p className="muted">{copy.subtitle}</p>
 
-      <label htmlFor="idea">Business idea</label>
-      <textarea
-        id="idea"
-        className="field"
-        value={idea}
-        onChange={(event) => setIdea(event.target.value)}
-        placeholder={copy.placeholder}
-        rows={5}
-      />
-      {userMode !== "non-tech" ? <p className="hint">Idea detail: {ideaCount} words</p> : null}
+      {userMode === "pro" ? (
+        <>
+          <label htmlFor="idea">Business idea</label>
+          <textarea
+            id="idea"
+            className="field"
+            value={idea}
+            onChange={(event) => setIdea(event.target.value)}
+            placeholder={copy.placeholder}
+            rows={5}
+          />
+          <p className="hint">Idea detail: {ideaCount} words</p>
+        </>
+      ) : (
+        <p className="hint">Business idea input is available in Pro mode only.</p>
+      )}
 
       <label htmlFor="direction">
         {userMode === "non-tech" ? "Visual style (easy mode)" : "Brand direction"}
@@ -72,18 +76,6 @@ export default function IdeaForm({
         <option value="Technical">{directionLabels.Technical}</option>
       </select>
 
-      <label htmlFor="mockupType">Mockup object</label>
-      <select
-        id="mockupType"
-        className="field"
-        value={mockupType}
-        onChange={(event) => setMockupType(event.target.value)}
-      >
-        <option value="T-Shirt">T-Shirt</option>
-        <option value="Mug">Mug</option>
-        <option value="4-Walled House">4-Walled House</option>
-      </select>
-
       {copy.showChecklist ? (
         <div className="checklist">
           <p className="hint strong">Prompt checklist</p>
@@ -91,10 +83,14 @@ export default function IdeaForm({
         </div>
       ) : null}
 
-      <button type="button" className="btn" onClick={onGenerate} disabled={loading || !idea.trim()}>
+      <button
+        type="button"
+        className="btn"
+        onClick={onGenerate}
+        disabled={loading || (userMode === "pro" && !idea.trim())}
+      >
         {loading ? "Generating..." : "Generate Branding"}
       </button>
     </section>
   );
 }
-
