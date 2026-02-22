@@ -31,8 +31,23 @@ function RealisticTShirtMockup({
 }) {
   const dark = tintColor(color, -0.12);
 
-  const frontSource = frontImage || logoImage || TRANSPARENT_PIXEL;
-  const backSource = backImage || logoImage || TRANSPARENT_PIXEL;
+  const hasFrontOverride = Boolean(frontImage);
+  const hasBackOverride = Boolean(backImage);
+  const showFrontLogoFallback =
+    !hasFrontOverride && branding?.placement === "Front" && Boolean(logoImage);
+  const showBackLogoFallback =
+    !hasBackOverride && branding?.placement === "Back" && Boolean(logoImage);
+
+  const frontSource = hasFrontOverride
+    ? frontImage
+    : showFrontLogoFallback
+      ? logoImage
+      : TRANSPARENT_PIXEL;
+  const backSource = hasBackOverride
+    ? backImage
+    : showBackLogoFallback
+      ? logoImage
+      : TRANSPARENT_PIXEL;
   const sleeveSource =
     branding?.placement === "Left Sleeve" || branding?.placement === "Right Sleeve"
       ? logoImage || TRANSPARENT_PIXEL
@@ -46,8 +61,8 @@ function RealisticTShirtMockup({
   configureTexture(backTexture);
   configureTexture(sleeveTexture);
 
-  const hasFrontArt = Boolean(frontImage || logoImage);
-  const hasBackArt = Boolean(backImage || logoImage);
+  const hasFrontArt = hasFrontOverride || showFrontLogoFallback;
+  const hasBackArt = hasBackOverride || showBackLogoFallback;
   const hasLeftSleeveArt = branding?.placement === "Left Sleeve" && Boolean(logoImage);
   const hasRightSleeveArt = branding?.placement === "Right Sleeve" && Boolean(logoImage);
 
@@ -179,10 +194,10 @@ function RealisticMugMockup({ color = "#f2f4f8" }) {
         <meshPhysicalMaterial color={color} side={THREE.DoubleSide} {...ceramicProps} />
       </mesh>
 
-      <mesh castShadow receiveShadow position={[0, 1.13, 0]}>
+      {/* <mesh castShadow receiveShadow position={[0, 1.13, 0]}>
         <torusGeometry args={[1.01, 0.07, 20, 96]} />
         <meshPhysicalMaterial color={rim} {...ceramicProps} />
-      </mesh>
+      </mesh> */}
 
       <mesh castShadow receiveShadow position={[0, 1.01, 0]}>
         <cylinderGeometry args={[0.91, 0.91, 0.15, 60]} />
@@ -435,8 +450,44 @@ const canvasModes = {
 };
 
 const mockupOptions = ["T-Shirt", "Mug", "4-Walled House"];
-const placementOptions = ["Front", "Back", "Left Sleeve", "Right Sleeve"];
+const placementOptionsByMockup = {
+  "T-Shirt": [
+    { value: "Front", label: "Front" },
+    { value: "Back", label: "Back" },
+    { value: "Left Sleeve", label: "Left Sleeve" },
+    { value: "Right Sleeve", label: "Right Sleeve" },
+  ],
+  Mug: [
+    { value: "Front", label: "Front Side" },
+    { value: "Back", label: "Back Side" },
+    { value: "Left Sleeve", label: "Left Side" },
+    { value: "Right Sleeve", label: "Right Side" },
+  ],
+  "4-Walled House": [
+    { value: "Front", label: "Front Wall" },
+    { value: "Back", label: "Back Wall" },
+    { value: "Left Sleeve", label: "Left Wall" },
+    { value: "Right Sleeve", label: "Right Wall" },
+  ],
+};
 const sidePalette = ["#f2f4f8", "#0f172a", "#1f6f8b", "#8b5e3c", "#7f1d1d", "#14532d"];
+
+function getPlacementOptions(mockupType) {
+  return placementOptionsByMockup[mockupType] || placementOptionsByMockup["T-Shirt"];
+}
+
+function hasTshirtArtworkForPlacement({ placement, logoImage, tshirtFrontImage, tshirtBackImage }) {
+  switch (placement) {
+    case "Back":
+      return Boolean(tshirtBackImage || logoImage);
+    case "Left Sleeve":
+    case "Right Sleeve":
+      return Boolean(logoImage);
+    case "Front":
+    default:
+      return Boolean(tshirtFrontImage || logoImage);
+  }
+}
 
 export default function ShirtCanvas({
   userMode,
@@ -462,7 +513,19 @@ export default function ShirtCanvas({
   onHouseBrandViewChange,
 }) {
   const mode = canvasModes[userMode] || canvasModes.tech;
-  const hasTshirtArtwork = Boolean(tshirtFrontImage || tshirtBackImage || logoImage);
+  const placementOptions = getPlacementOptions(mockupType);
+  const tshirtPlacementHasArtwork = hasTshirtArtworkForPlacement({
+    placement: branding.placement,
+    logoImage,
+    tshirtFrontImage,
+    tshirtBackImage,
+  });
+  const brandImageHint =
+    mockupType === "T-Shirt"
+      ? "Base artwork for sleeves and fallback art for front/back placement."
+      : mockupType === "Mug"
+        ? "Fallback artwork when no mug-side image is uploaded."
+        : "Applied to the selected wall placement.";
 
   return (
     <section className="canvasPanel">
@@ -517,7 +580,7 @@ export default function ShirtCanvas({
                 />
 
                 {mockupType === "T-Shirt" ? (
-                  hasTshirtArtwork ? null : (
+                  tshirtPlacementHasArtwork ? null : (
                     <BrandingText branding={branding} mockupType={mockupType} houseBrandView={houseBrandView} />
                   )
                 ) : logoImage || mugSideImage ? (
@@ -572,8 +635,8 @@ export default function ShirtCanvas({
               onChange={(event) => onPlacementChange?.(event.target.value)}
             >
               {placementOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -591,6 +654,21 @@ export default function ShirtCanvas({
                   <option value="inside">Inside Walls</option>
                 </select>
               </>
+            ) : null}
+
+            <label htmlFor="previewLogoUpload">Brand image</label>
+            <input
+              id="previewLogoUpload"
+              className="field"
+              type="file"
+              accept="image/*"
+              onChange={onLogoUpload}
+            />
+            <p className="hint">{brandImageHint}</p>
+            {logoImage ? (
+              <button type="button" className="miniBtn secondaryMini" onClick={onClearLogo}>
+                Remove Brand Image
+              </button>
             ) : null}
 
             {mockupType === "T-Shirt" ? (
@@ -638,24 +716,6 @@ export default function ShirtCanvas({
                 {mugSideImage ? (
                   <button type="button" className="miniBtn secondaryMini" onClick={onClearMugSide}>
                     Remove Mug Image
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-
-            {mockupType === "4-Walled House" ? (
-              <>
-                <label htmlFor="previewLogoUpload">Brand image</label>
-                <input
-                  id="previewLogoUpload"
-                  className="field"
-                  type="file"
-                  accept="image/*"
-                  onChange={onLogoUpload}
-                />
-                {logoImage ? (
-                  <button type="button" className="miniBtn secondaryMini" onClick={onClearLogo}>
-                    Remove Image
                   </button>
                 ) : null}
               </>

@@ -35,6 +35,7 @@ export default function IdeaForm({
   setDirection,
   onGenerate,
   loading,
+  guidedIdea,
 }) {
   const copy = modeCopy[userMode] || modeCopy.tech;
   const ideaCount = idea.trim().split(/\s+/).filter(Boolean).length;
@@ -58,7 +59,11 @@ export default function IdeaForm({
           <p className="hint">Idea detail: {ideaCount} words</p>
         </>
       ) : (
-        <p className="hint">Business idea input is available in Pro mode only.</p>
+        <div className="readOnlyPanel">
+          <p className="hint strong">Guided business idea</p>
+          <p className="hint">{guidedIdea}</p>
+          <p className="hint">Switch to Pro mode to write and control your own idea context.</p>
+        </div>
       )}
 
       <label htmlFor="direction">
@@ -89,7 +94,7 @@ export default function IdeaForm({
         onClick={onGenerate}
         disabled={loading || (userMode === "pro" && !idea.trim())}
       >
-        {loading ? "Generating..." : "Generate Branding"}
+        {loading ? "Generating..." : userMode === "pro" ? "Generate Branding" : "Generate Guided Branding"}
       </button>
     </section>
   );

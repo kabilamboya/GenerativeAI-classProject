@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import IdeaForm from "./components/IdeaForm";
 import BrandingDetails from "./components/BrandingDetails";
 import { generateBrandImage, generateBranding } from "./lib/api";
@@ -28,6 +28,12 @@ const MODE_CONFIG = {
   },
 };
 
+const defaultIdeaByMode = {
+  "non-tech": "Consumer lifestyle brand for everyday products",
+  tech: "Developer productivity platform for software teams",
+  pro: "",
+};
+
 export default function App() {
   const [userMode, setUserMode] = useState("non-tech");
   const [idea, setIdea] = useState("");
@@ -44,21 +50,8 @@ export default function App() {
   const [houseBrandView, setHouseBrandView] = useState("outside");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasGeneratedBranding, setHasGeneratedBranding] = useState(false);
   const modeInfo = MODE_CONFIG[userMode];
-
-  const canEdit = useMemo(
-    () =>
-      Boolean(
-        branding.name || branding.slogan || branding.description || branding.missionStatement
-      ),
-    [branding]
-  );
-
-  const defaultIdeaByMode = {
-    "non-tech": "Consumer lifestyle brand for everyday products",
-    tech: "Developer productivity platform for software teams",
-    pro: "",
-  };
 
   const handleGenerate = async () => {
     const resolvedIdea = userMode === "pro" ? idea.trim() : defaultIdeaByMode[userMode];
@@ -76,6 +69,7 @@ export default function App() {
         missionStatement: data.missionStatement || "",
         placement: data.placement || "Front",
       });
+      setHasGeneratedBranding(true);
     } catch (err) {
       setError(err.message || "Unable to generate branding.");
     } finally {
@@ -93,6 +87,7 @@ export default function App() {
       return;
     }
 
+    setError("");
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -112,6 +107,7 @@ export default function App() {
       return;
     }
 
+    setError("");
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -132,6 +128,7 @@ export default function App() {
       return;
     }
 
+    setError("");
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") {
@@ -148,7 +145,7 @@ export default function App() {
       return;
     }
 
-      setGeneratingImage(true);
+    setGeneratingImage(true);
     setError("");
     try {
       const data = await generateBrandImage({ prompt });
@@ -172,13 +169,13 @@ export default function App() {
         <p>
           Generate brand identity and preview it instantly on an interactive 3D apparel model.
         </p>
-        <div className="modeSwitch" role="tablist" aria-label="User type">
+        <div className="modeSwitch" role="radiogroup" aria-label="User type">
           {Object.entries(MODE_CONFIG).map(([modeKey, config]) => (
             <button
               key={modeKey}
               type="button"
-              role="tab"
-              aria-selected={userMode === modeKey}
+              role="radio"
+              aria-checked={userMode === modeKey}
               className={`modePill ${userMode === modeKey ? "active" : ""}`}
               onClick={() => setUserMode(modeKey)}
             >
@@ -198,9 +195,10 @@ export default function App() {
           setDirection={setDirection}
           onGenerate={handleGenerate}
           loading={loading}
+          guidedIdea={userMode === "pro" ? "" : defaultIdeaByMode[userMode]}
         />
 
-        {canEdit ? (
+        {hasGeneratedBranding ? (
           <BrandingDetails
             userMode={userMode}
             branding={branding}
@@ -215,7 +213,8 @@ export default function App() {
           <section className="panel placeholder">
             <h2>Branding Output</h2>
             <p className="muted">
-              Generate once to unlock editable brand fields for {modeInfo.label} mode.
+              Generate branding once to unlock editable fields and output refinements for{" "}
+              {modeInfo.label} mode.
             </p>
           </section>
         )}

@@ -332,9 +332,21 @@ textarea.field {
 
   .previewLayout {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(280px, 56vh) auto;
+    height: auto;
   }
 
   .canvasWrap {
-    height: 420px;
+    height: auto;
+    min-height: 0;
+  }
+
+  .canvasViewport {
+    height: min(56vh, 440px);
+    min-height: 280px;
+  }
+
+  .previewSidePanel {
+    max-height: none;
   }
 }
